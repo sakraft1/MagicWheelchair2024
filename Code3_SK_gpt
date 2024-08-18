@@ -1,0 +1,68 @@
+//This code is based on code from Great Scott on Youtube. It uses a hard drive motor as a rotary encoder. Based on the direction turned an LED illuminates. There is also a blinking LED that opperates independently of the rotary encoder.
+
+#define L1 3
+#define L2 4
+#define L3 5
+boolean L1Val = 0;
+boolean wait = 0;
+int lcdval = 100;
+
+unsigned long previousMillis = 0;
+const long interval = 1000; // interval at which to blink (milliseconds)
+bool ledState = LOW; // variable to store LED state
+
+void isr1() {
+  if (wait == 0) {
+    L1Val = 1;
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(L1, INPUT);
+  pinMode(L2, INPUT);
+  pinMode(L3, INPUT);
+
+  pinMode(13, OUTPUT);
+  pinMode(12, OUTPUT);
+  pinMode(11, OUTPUT); // blinker
+
+  attachInterrupt(digitalPinToInterrupt(L1), isr1, RISING); // Use digitalPinToInterrupt for pin mapping
+  
+  Serial.println(lcdval);
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+
+  // Blink LED without blocking
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    
+    // Toggle the LED state
+    ledState = !ledState;
+    digitalWrite(11, ledState ? HIGH : LOW);
+  }
+
+  if ((L1Val == 1) && (digitalRead(L3) == HIGH)) {
+    wait = 1;
+    lcdval++;
+    Serial.println(lcdval);
+    digitalWrite(13, HIGH);
+    delay(500);
+    digitalWrite(13, LOW);
+    L1Val = 0;
+    wait = 0;
+  }
+  
+  if ((L1Val == 1) && (digitalRead(L2) == HIGH)) {
+    wait = 1;
+    lcdval--;
+    Serial.println(lcdval);
+    digitalWrite(12, HIGH);
+    delay(500);
+    digitalWrite(12, LOW);
+    L1Val = 0;
+    wait = 0;
+  }
+}
